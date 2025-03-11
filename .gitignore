@@ -1,0 +1,18 @@
+ Compiled source #
+###################
+*.swp
+*.pyc
+*.o
+*.so
+
+# Specific Files #
+##################
+/.last_build
+/Makefile.local
+/parallel-hashmap
+/activate
+/g6k-env
+/g6k-fplll
+/g6k-fpylll
+/g6k/siever.cpp
+/g6k/siever_params.cpp

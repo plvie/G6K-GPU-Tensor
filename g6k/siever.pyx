@@ -32,6 +32,9 @@ from siever_params import temp_params
 
 from libc.math cimport NAN
 
+def _def_scoring(index, nlen, olen, aux):
+    return True
+
 class SaturationError(RuntimeError):
     pass
 
@@ -1711,7 +1714,7 @@ cdef class Siever(object):
         return L
 
 
-    def insert_best_lift(self, scoring=(lambda index, nlen, olen, aux: True), aux=None):
+    def insert_best_lift(self, scoring=_def_scoring, aux=None):
         """
         Consider all best lifts, score them, and insert the one with the best score.
 
