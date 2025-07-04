@@ -12,7 +12,7 @@ import time
 from collections import OrderedDict # noqa
 from math import log
 
-from fpylll import BKZ as fplll_bkz
+from fpylll import BKZ as fplll_bkz, IntegerMatrix
 from fpylll.algorithms.bkz2 import BKZReduction
 from fpylll.tools.quality import basis_quality
 from fpylll.util import gaussian_heuristic, set_threads
@@ -26,6 +26,9 @@ from g6k.utils.util import load_lwe_challenge, load_matrix_file
 
 from g6k.utils.lwe_estimation import gsa_params, primal_lattice_basis
 
+
+import numpy as np
+from blaster import reduce
 
 def lwe_kernel(arg0, params=None, seed=None):
     """
@@ -146,7 +149,15 @@ def lwe_kernel(arg0, params=None, seed=None):
         print("Loading matrix file: lwechallenge/B_n%d_a%.4f_block%d_tour%d.mat" % (n, alpha, loadblocksize, loadtour))
         sys.stdout.flush()
         B, _ = load_matrix_file("lwechallenge/B_n%d_a%.4f_block%d_tour%d.mat" % (n, alpha, loadblocksize, loadtour), doLLL=False, high_prec=True)
-
+    B_np = np.empty((m+1, m+1), dtype=np.int64)
+    B.to_matrix(B_np)
+    B_np = B_np.T
+    for blocksize in blocksizes:
+        if blocksize < fpylll_crossover:
+            if verbose:
+                print("Using blaster BKZ-%d for blocksize %d." % (blocksize, blocksize)) 
+            _, B_np, _ = reduce(B_np, cores=8, use_seysen=True, beta=blocksize, bkz_tours=1)
+    B = IntegerMatrix.from_matrix(B_np.T)
     g6k = Siever(B, params)
     print("GSO precision: ", g6k.M.float_type)
 
@@ -177,21 +188,21 @@ def lwe_kernel(arg0, params=None, seed=None):
             else:
                 # BKZ tours
 
-                if blocksize < fpylll_crossover:
-                    if verbose:
-                        print("Starting a fpylll BKZ-%d tour. " % (blocksize), end='')
-                        sys.stdout.flush()
-                    bkz = BKZReduction(g6k.M)
-                    par = fplll_bkz.Param(blocksize,
-                                          strategies=fplll_bkz.DEFAULT_STRATEGY,
-                                          max_loops=1)
-                    bkz(par)
+                # if blocksize < fpylll_crossover:
+                #     if verbose:
+                #         print("Starting a fpylll BKZ-%d tour. " % (blocksize), end='')
+                #         sys.stdout.flush()
+                #     bkz = BKZReduction(g6k.M)
+                #     par = fplll_bkz.Param(blocksize,
+                #                           strategies=fplll_bkz.DEFAULT_STRATEGY,
+                #                           max_loops=1)
+                #     bkz(par)
 
-                else:
-                    if verbose:
+                #else:
+                if verbose:
                         print("Starting a pnjBKZ-%d tour. " % (blocksize))
 
-                    pump_n_jump_bkz_tour(g6k, tracer, blocksize, jump=jump,
+                pump_n_jump_bkz_tour(g6k, tracer, blocksize, jump=jump,
                                          verbose=verbose,
                                          extra_dim4free=extra_dim4free,
                                          dim4free_fun=dim4free_fun,
@@ -280,11 +291,46 @@ def lwe_kernel(arg0, params=None, seed=None):
 
         if g6k.M.get_r(0, 0) <= target_norm:
             print("Finished! TT=%.2f sec" % (time.time() - T0))
-            print(g6k.M.B[0])
+            solution = g6k.M.B[0]
+            print("error vector:", solution)
+
+            #recover the solution vector here
+            e = np.empty(m, dtype=np.int64)
+            for i in range(m):
+                e[i] = (solution[i])
+            if solution[-1] != 1 and solution[-1] != -1:
+                print("Error: last component of solution is not +- 1")
+                e = np.asarray([x / solution[-1] for x in e])
+            elif solution[-1] == -1:
+                print("Warning: last component of solution is -1, normalizing...")
+                e = np.asarray([-x for x in e])
+            #print error norm
+            print("error norm:", np.linalg.norm(e, ord=2))
+            n = A.ncols      
+            A_full = np.empty((A.nrows, A.ncols), dtype=np.int64)
+            A.to_matrix(A_full)
+            # take the first n rows of A
+            A_m = A_full[:n, :].copy()
+            # same for b
+            b_basic = (c[:n] - e[:n]) % q
+            b = np.empty((n,), dtype=np.int64)
+            for i in range(n):
+                b[i] = (b_basic[i])
+            det = int(round(np.linalg.det(A_m))) 
+            if det % q == 0:
+                raise ValueError("A_m non inversible mod q")
+            import sympy as sp
+            A_sym = sp.Matrix(A_m.tolist())
+            b_sym = sp.Matrix(b_basic.tolist())
+            Ainv_mod = A_sym.inv_mod(q)
+            x_sym = Ainv_mod * b_sym
+            x = [int(x_sym[i] % q) for i in range(A_sym.cols)]
+            print("Solution x mod q :", x)
             alpha_ = int(alpha*1000)
             filename = 'lwechallenge/%03d-%03d-solution.txt' % (n, alpha_)
             fn = open(filename, "w")
-            fn.write(str(g6k.M.B[0]))
+            fn.write("error" + str(g6k.M.B[0]) + "\n")
+            fn.write("secret: " + str(x) + "\n")
             fn.close()
             return
 
