@@ -53,6 +53,18 @@ void Siever::gauss_sieve(size_t max_db_size)
     size_t queue_begin = status_data.gauss_data.queue_start; // We are guaranteed that all elements
                                                              // cdb[0],...,cdb[queue_begin-1] are
                                                              // already reduced wrt each other.
+
+    if (cdb.empty()) {
+    std::cerr << "[!] gauss_sieve: called with empty cdb!" << std::endl;
+    return;
+    }
+
+    if (status_data.gauss_data.queue_start > cdb.size()) {
+        std::cerr << "[!] gauss_sieve: invalid queue_start = " << status_data.gauss_data.queue_start
+                << ", cdb.size() = " << cdb.size() << std::endl;
+        return;
+    }
+
     // termination condition outer loop
     while(cdb.size() <= max_db_size)
     {

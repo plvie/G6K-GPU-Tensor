@@ -19,6 +19,10 @@ enable_popcount=1
 enable_yr=1
 jobs=4
 
+export CC=/usr/bin/gcc
+export CXX=/usr/bin/g++
+
+
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		-m|--maxsievingdim)
