@@ -1759,8 +1759,10 @@ cdef class Siever(object):
 
         if best_score is None or not best_score:
             return None
-
+        U_before = self.M.U.__copy__()
         self.insert(-best_i, best_v)
+        U_before.apply_transform(self.M.U)
+        self.M = GSO.Mat(self.M.B, U=U_before, UinvT = self.M.UinvT)
         return -best_i
 
     def output_bench(self):
