@@ -107,7 +107,6 @@ cdef class Siever(object):
         self.params = copy.copy(params)
 
         self._core.full_n = M.d
-        self.lll(0, M.d)
         self.initialized = False
 
     @property
@@ -1644,6 +1643,14 @@ cdef class Siever(object):
             >>> from fpylll import IntegerMatrix, LLL, FPLLL
             >>> FPLLL.set_random_seed(0x1337)
             >>> from g6k import Siever
+
+        EXAMPLES::
+
+            >>> from fpylll import IntegerMatrix, LLL, FPLLL
+            >>> FPLLL.set_random_seed(0x1337)
+            >>> from g6k import Siever
+            >>> A = LLL.reduction(IntegerMatrix.random(40, "qary", k=20, bits=20))
+            >>> g6k = Siever(A)
             >>> A = LLL.reduction(IntegerMatrix.random(40, "qary", k=20, bits=20))
             >>> g6k = Siever(A)
             >>> g6k.initialize_local(0, 10, 30)
@@ -1660,6 +1667,35 @@ cdef class Siever(object):
             lll_(m-l, m-l, m-lp)
 
         self.update_gso(self.ll, self.r)
+        #         from blaster import reduce
+        # print("before split lll") # rework here to use blaster
+        # float_type = self.M.float_type
+        # new_U = self.M.U 
+        # new_U_np = npp.empty((new_U.nrows, new_U.ncols), dtype=int)
+        # new_U.to_matrix(new_U_np)
+        # new_UinvT = self.M.UinvT
+        # new_UinvT_np = npp.empty((new_UinvT.nrows, new_UinvT.ncols), dtype=int)
+        # new_UinvT.to_matrix(new_UinvT_np)
+
+        # B = self.M.B
+        # B_np = npp.empty((B.nrows, B.ncols), dtype=int)
+        # B.to_matrix(B_np)
+        # U, Breduce, _ = reduce(B_np.T, use_seysen=True)
+
+        # new_U = new_U_np @ U.T
+        # UinvT_delta = npp.linalg.inv(U).astype(int)
+        # new_UinvT   = UinvT_delta @ new_UinvT_np
+
+
+        # new_U = IntegerMatrix.from_matrix(new_U)
+        # new_UinvT = IntegerMatrix.from_matrix(new_UinvT)
+        # Breduce = IntegerMatrix.from_matrix(Breduce.T)
+        # self.M = GSO.Mat(Breduce, float_type=float_type,
+        #                 U=new_U,
+        #                 UinvT=new_UinvT)
+        # self.update_gso(0,Breduce.nrows)
+        # print("after split lll")
+
 
     def best_lifts(self):
         """

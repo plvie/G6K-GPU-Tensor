@@ -28,7 +28,6 @@ from g6k.utils.lwe_estimation import gsa_params, primal_lattice_basis
 
 
 import numpy as np
-from blaster import reduce
 
 def lwe_kernel(arg0, params=None, seed=None):
     """
@@ -152,11 +151,11 @@ def lwe_kernel(arg0, params=None, seed=None):
     B_np = np.empty((m+1, m+1), dtype=np.int64)
     B.to_matrix(B_np)
     B_np = B_np.T
-    for blocksize in blocksizes:
-        if blocksize < fpylll_crossover:
-            if verbose:
-                print("Using blaster BKZ-%d for blocksize %d." % (blocksize, blocksize)) 
-            _, B_np, _ = reduce(B_np, cores=8, use_seysen=True, beta=blocksize, bkz_tours=1)
+    # for blocksize in blocksizes:
+    #     if blocksize < fpylll_crossover:
+    #         if verbose:
+    #             print("Using blaster BKZ-%d for blocksize %d." % (blocksize, blocksize)) 
+    #         _, B_np, _ = reduce(B_np, cores=8, use_seysen=True, beta=blocksize, bkz_tours=1)
     B = IntegerMatrix.from_matrix(B_np.T)
     g6k = Siever(B, params)
     print("GSO precision: ", g6k.M.float_type)
@@ -353,7 +352,7 @@ def lwe():
                                   bkz__tours=1,
                                   bkz__jump=1,
                                   bkz__extra_dim4free=12,
-                                  bkz__fpylll_crossover=51,
+                                  bkz__fpylll_crossover=31,
                                   bkz__dim4free_fun="default_dim4free_fun",
                                   pump__down_sieve=True,
                                   dummy_tracer=True,  # set to control memory

@@ -17,11 +17,11 @@ enable_jobs=0
 enable_templated_dim=0
 enable_popcount=1
 enable_yr=1
-jobs=4
+jobs=8
 
 export CC=/usr/bin/gcc
 export CXX=/usr/bin/g++
-
+export PATH=/usr/bin:/usr/local/bin:$PATH
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -140,8 +140,8 @@ elif [ "${enable_cuda}" != "" ]; then
 	want_cuda="yes"
 	cuda_path="${enable_cuda}"
 fi
-echo "want_cuda: ${want_cuda}" #&>> cuda_debug.log
-echo "cuda_path: ${cuda_path}" #&>> cuda_debug.log
+echo "want_cuda: ${want_cuda}" &>> cuda_debug.log
+echo "cuda_path: ${cuda_path}" &>> cuda_debug.log
 ### CUDA: FIND NVCC
 if [ "${want_cuda}" != "no" ]; then
 	if [ "${cuda_path}" != "" ]; then
@@ -152,10 +152,10 @@ if [ "${want_cuda}" != "no" ]; then
 		have_nvcc="yes"
 	fi
 fi
-echo "nvcc_path: ${NVCC}" #&>> cuda_debug.log
+echo "nvcc_path: ${NVCC}" &>> cuda_debug.log
 if [ "${have_nvcc}" = "yes" ]; then
 	NVCC_VERSION=`${NVCC} --version | grep release | awk 'gsub(/,/, "") {print $5}'`
-	echo "nvcc version: ${NVCC_VERSION}" #&>> cuda_debug.log
+	echo "nvcc version: ${NVCC_VERSION}" &>> cuda_debug.log
 
 	cuda_libdir=lib
 	if [ `uname -m` = x86_64 ]; then
@@ -167,8 +167,8 @@ if [ "${have_nvcc}" = "yes" ]; then
 
 	CUDA_FLAGS="-lineinfo -I${cuda_path}/include -I../parallel-hashmap"
 	CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath=${cuda_path}/${cuda_libdir} -lcudart -L${cuda_path}/${cuda_libdir}/stubs -Wl,-rpath=${cuda_path}/${cuda_libdir}/stubs -lcuda -lcublas -lcurand"
-	echo "CUDA_FLAGS: ${CUDA_FLAGS}" #&>> cuda_debug.log
-	echo "CUDA_LIBS: ${CUDA_LIBS}" #&>> cuda_debug.log
+	echo "CUDA_FLAGS: ${CUDA_FLAGS}" &>> cuda_debug.log
+	echo "CUDA_LIBS: ${CUDA_LIBS}" &>> cuda_debug.log
 
 	EXTRAFLAGS="$EXTRAFLAGS -DHAVE_CUDA"
 
@@ -195,7 +195,7 @@ if [ "${only_conf}" = "1" ]; then
 	exit
 fi
 
-[ -d parallel-hashmap ] || git clone https://github.com/cr-marcstevens/parallel-hashmap
+[ -d parallel-hashmap ] || git clone https://github.com/greg7mdp/parallel-hashmap
 
 rm -r build *.so g6k/*.so cuda/*.so kernel/*.so `find g6k -name "*.pyc"`
 python3 setup.py clean

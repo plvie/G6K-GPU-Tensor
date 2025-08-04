@@ -17,7 +17,10 @@ from g6k.algorithms.bkz import naive_bkz_tour, pump_n_jump_bkz_tour
 from g6k.siever import Siever
 from g6k.utils.cli import parse_args, run_all, pop_prefixed_params
 from g6k.utils.stats import SieveTreeTracer, dummy_tracer
-from g6k.utils.util import load_prebkz
+from g6k.utils.util import load_prebkz, load_matrix_file
+
+import numpy as np
+from sage.all import Matrix, ZZ
 
 
 def bkz_kernel(arg0, params=None, seed=None):
@@ -88,13 +91,13 @@ def bkz_kernel(arg0, params=None, seed=None):
 
     challenge_seed = params.pop("challenge_seed")
 
-    A, bkz = load_prebkz(d, s=challenge_seed, blocksize=pre_blocksize)
+    A, bkz = load_matrix_file("B_LLL")
 
     MM = GSO.Mat(A, float_type="double",
                  U=IntegerMatrix.identity(A.nrows, int_type=A.int_type),
                  UinvT=IntegerMatrix.identity(A.nrows, int_type=A.int_type))
-
     g6k = Siever(MM, params, seed=seed)
+  
     if dont_trace:
         tracer = dummy_tracer
     else:
@@ -136,7 +139,17 @@ def bkz_kernel(arg0, params=None, seed=None):
                 print( fmt % (algbkz + "+" + ("enum" if algbkz == "fpylll" else g6k.params.default_sieve),
                              jump, pump_params["down_sieve"], extra_dim4free,
                              blocksize, slope, time.time() - T0) )
-
+    #from the deepLLL 4, extract the new U after pump and jump
+    print(g6k.M.U)
+    B = g6k.M.B
+    A_np = np.empty((A.nrows, A.ncols), dtype=int)
+    B_np = np.empty((B.nrows, B.ncols), dtype=int)
+    A.to_matrix(A_np)
+    B.to_matrix(B_np)
+    A = Matrix(ZZ, A_np.tolist())
+    B = Matrix(ZZ, B_np.tolist())
+    U = A.solve_left(B)
+    assert (A_np @ U == B_np).all()
     tracer.exit()
     try:
         return tracer.trace
@@ -156,8 +169,9 @@ def bkz_tour():
 
     args, all_params = parse_args(description,
                                   bkz__alg="pump_and_jump",
-                                  bkz__blocksizes="40:51:2",
+                                  bkz__blocksizes="60:61:1",
                                   bkz__pre_blocksize=39,
+                                  pump__prefer_left_insert=10,
                                   bkz__tours=1,
                                   bkz__extra_dim4free=0,
                                   bkz__jump=1,
@@ -165,7 +179,7 @@ def bkz_tour():
                                   pump__down_sieve=True,
                                   challenge_seed=0,
                                   dummy_tracer=True,  # set to control memory
-                                  verbose=False
+                                  verbose=True
                                   )
 
     stats = run_all(bkz_kernel, all_params.values(),

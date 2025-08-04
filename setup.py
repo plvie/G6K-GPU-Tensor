@@ -45,5 +45,5 @@ setup(
     ext_modules=cythonize(extensions, compiler_directives={'binding': True,
                                                            'embedsignature': True,
                                                            'language_level': 2}),
-    packages=[],
+    packages=["g6k", "g6k.algorithms", "g6k.utils"],
 )

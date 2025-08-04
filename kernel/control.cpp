@@ -115,7 +115,8 @@ void Siever::invalidate_histo()
 void Siever::set_threads(unsigned int nr)
 {
     assert(nr >= 1);
-    threadpool.resize(nr-1);
+    threadpool.resize(nr - 1);
+
 }
 
 // Loads (full) gso of size full_n. The GSO matrix is passed as an one-dim C-Array.

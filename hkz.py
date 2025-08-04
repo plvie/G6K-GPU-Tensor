@@ -45,7 +45,7 @@ def hkz_kernel(arg0, params=None, seed=None):
         n = arg0
 
     reserved_n = n
-    params = params.new(reserved_n=reserved_n, otf_lift=False)
+    params = params.new(reserved_n=reserved_n, otf_lift=False, threads=16)
     verbose = params.pop("verbose")
 
     pump_params = pop_prefixed_params("pump", params)
@@ -89,7 +89,7 @@ def hkz():
                                   pump__down_stop=9999,
                                   saturation_ratio=.8,
                                   pump__prefer_left_insert=10,
-                                  workout__dim4free_min=0, 
+                                  workout__dim4free_min=0,
                                   workout__dim4free_dec=15
                                   )
 

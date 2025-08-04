@@ -100,14 +100,14 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
     :param verbose: print pump steps on the standard output.
 
     """
-
+    print("in gpu here")
     pump.r = kappa+blocksize
     pump.l = kappa+dim4free  # noqa
 
     flast = blocksize
 
     g6k.shrink_db(0)
-    g6k.lll(kappa, pump.r)
+    g6k.update_gso(kappa, pump.r)
     g6k.initialize_local(kappa, max(pump.r-start_up_n, pump.l+1), pump.r)
 
     pump.sat_factor = 1.

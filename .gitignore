@@ -17,3 +17,7 @@
 /g6k/siever.cpp
 /g6k/siever_params.cpp
 /G6K.egg-info
+build
+logs
+lwechallenge
+svpchallenge
