@@ -167,7 +167,7 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
                 with tracer.context(("pump-step-down", "l:%d r:%d n:%d" % (g6k.l, g6k.r, g6k.n))):
                     with g6k.temp_params(saturation_ratio=pump.saturation_ratio_down):
                         # (try to) Insert
-                        ii = g6k.insert_best_lift(scoring_down, aux=pump)
+                        ii = g6k.insert_best_lift(scoring_down, aux=pump, no_need_lll=(True if goal_r0 is not None else False))
                         if ii is not None and increasing_insert_index:
                             pump.insert_left_bound = ii + 1
                         else:

@@ -1532,6 +1532,44 @@ cdef class Siever(object):
         sig_on()
         self._core.extend_right(offset)
         sig_off()
+    def insert_svp(self, kappa, v):
+        """
+        Insert a vector in the GSO basis, and update the siever accordingly (l++, n--, r fixed, db is updated)
+
+        :param kappa: position at which to insert improved vector
+        :param v: Improved vector expressed in base B[0 … r-1]
+        """
+        assert(self.initialized)      
+        assert(len(v) == self.r)
+        m = self.full_n
+
+        full_j = where(abs(v) == 1)[0][-1]
+
+        if full_j < self.l:
+            print full_j, self.l
+            print v
+            raise NotImplementedError('Can only handle vectors with +/- 1 in sieving context (have you deactivated param.unitary_only ?)')
+
+        assert kappa <= self.l
+
+        if v[full_j] == -1:
+            v *= -1
+
+        self.M.UinvT.gen_identity()
+        self.M.U.gen_identity()
+
+        if not self.params.dual_mode:
+            with self.M.row_ops(kappa, self.r):
+                for i in range(kappa, self.r):
+                    if i != full_j:
+                        self.M.row_addmul(full_j, i, v[i])
+                self.M.move_row(full_j, kappa)
+        else:
+            with self.M.row_ops(m-self.r, m-kappa):
+                for i in range(kappa, self.r):
+                    if i != full_j:
+                        self.M.row_addmul(m-1-i, m-1-full_j, -v[i])
+                self.M.move_row(m-1-full_j, m-1-kappa)
 
     def insert(self, kappa, v):
         """
@@ -1576,7 +1614,7 @@ cdef class Siever(object):
         new_l = self.l + 1
         new_n = self.n - 1
 
-        self.split_lll(self.ll, new_l, self.r)
+        self.split_lll(self.ll, new_l, self.r) # a rework
 
         cdef np.ndarray T = zeros((new_n, self.n), dtype=int64, order='C')
 
@@ -1625,8 +1663,7 @@ cdef class Siever(object):
             m = self.full_n
             lll(m-r, m-r, m-l)
         self.initialized=False
-
-
+    
     def split_lll(self, lp, l, r):
         """
         Run partials LLL first between lp and l and then between l and r.
@@ -1667,33 +1704,22 @@ cdef class Siever(object):
             lll_(m-l, m-l, m-lp)
 
         self.update_gso(self.ll, self.r)
-        #         from blaster import reduce
+        # from blaster import reduce
         # print("before split lll") # rework here to use blaster
-        # float_type = self.M.float_type
-        # new_U = self.M.U 
-        # new_U_np = npp.empty((new_U.nrows, new_U.ncols), dtype=int)
-        # new_U.to_matrix(new_U_np)
-        # new_UinvT = self.M.UinvT
-        # new_UinvT_np = npp.empty((new_UinvT.nrows, new_UinvT.ncols), dtype=int)
-        # new_UinvT.to_matrix(new_UinvT_np)
 
         # B = self.M.B
-        # B_np = npp.empty((B.nrows, B.ncols), dtype=int)
+        # B_np = npp.empty((B.nrows, B.ncols), dtype=np.int64)
         # B.to_matrix(B_np)
         # U, Breduce, _ = reduce(B_np.T, use_seysen=True)
-
-        # new_U = new_U_np @ U.T
-        # UinvT_delta = npp.linalg.inv(U).astype(int)
-        # new_UinvT   = UinvT_delta @ new_UinvT_np
-
-
-        # new_U = IntegerMatrix.from_matrix(new_U)
-        # new_UinvT = IntegerMatrix.from_matrix(new_UinvT)
-        # Breduce = IntegerMatrix.from_matrix(Breduce.T)
-        # self.M = GSO.Mat(Breduce, float_type=float_type,
-        #                 U=new_U,
-        #                 UinvT=new_UinvT)
-        # self.update_gso(0,Breduce.nrows)
+        # new_B = Breduce.T
+        # cdef int m = B.nrows
+        # cdef int p = B.ncols
+        # cdef int i, j
+        # core_pointer_basis = B._core.long[0]
+        # for i in range(m):
+        #     for j in range(p):
+        #         core_pointer_basis[i][j] = new_B[i,j]
+        # self.update_gso(0,B.nrows)
         # print("after split lll")
 
 
@@ -1750,7 +1776,7 @@ cdef class Siever(object):
         return L
 
 
-    def insert_best_lift(self, scoring=_def_scoring, aux=None):
+    def insert_best_lift(self, scoring=_def_scoring, aux=None, no_need_lll = False):
         """
         Consider all best lifts, score them, and insert the one with the best score.
 
@@ -1795,7 +1821,10 @@ cdef class Siever(object):
 
         if best_score is None or not best_score:
             return None
-        self.insert(-best_i, best_v)
+        if no_need_lll:
+            self.insert_svp(-best_i, best_v)
+        else:
+            self.insert(-best_i, best_v)
         return -best_i
 
     def output_bench(self):
