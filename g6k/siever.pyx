@@ -1342,7 +1342,9 @@ cdef class Siever(object):
                             tmp = npp.copy(sub)
                             tmp[j] = dual_vecs_yr[i]
                             gram = tmp.transpose().dot(tmp)
-                            cnd2 = npp.trace(gram)/k/npp.exp(npp.linalg.slogdet(gram)[1]/k)
+                            den = npp.exp(npp.linalg.slogdet(gram)[1]/k)
+                            den = den if den != 0.0 else 1e-12
+                            cnd2 = npp.trace(gram)/k/den
                             if( cnd2 < cnd ):
                                 cnd = cnd2
                                 bestj = j
