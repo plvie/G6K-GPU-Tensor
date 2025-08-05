@@ -168,7 +168,7 @@ cdef class Siever(object):
         if r_bound == -1:
             cr = self.full_n
         if not (0 <= l_bound and l_bound <= r_bound and r_bound <= self.M.d):
-            raise ValueError("Parameters %d, %d, %d do not satisfy constraint  0 <= l_bound <= r_bound <= self.M.d"%(l_bound, r_bound))
+            raise ValueError("Parameters %d, %d do not satisfy constraint  0 <= l_bound <= r_bound <= self.M.d"%(l_bound, r_bound))
 
 
         cdef int i, j, k
@@ -1572,6 +1572,7 @@ cdef class Siever(object):
                     if i != full_j:
                         self.M.row_addmul(m-1-i, m-1-full_j, -v[i])
                 self.M.move_row(m-1-full_j, m-1-kappa)
+        self.M.update_gso_row(kappa, kappa)
 
     def insert(self, kappa, v):
         """

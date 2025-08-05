@@ -100,7 +100,6 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
     :param verbose: print pump steps on the standard output.
 
     """
-    print("in gpu here")
     pump.r = kappa+blocksize
     pump.l = kappa+dim4free  # noqa
 
@@ -158,6 +157,7 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
             #print g6k.db_lift_probability()
 
             if goal_r0 is not None and (g6k.M.get_r(kappa, kappa) <= goal_r0):
+                print("norm of the solution : ", g6k.M.get_r(kappa, kappa))
                 print('Solution:', str(g6k.M.B[kappa]))
                 return flast
 
@@ -174,6 +174,7 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
                             g6k.shrink_left(1)
 
                         if goal_r0 is not None and (g6k.M.get_r(kappa, kappa) <= goal_r0):
+                            print("norm of the solution : ", g6k.M.get_r(kappa, kappa))
                             print('Solution:', str(g6k.M.B[kappa]))
                             return flast
 
