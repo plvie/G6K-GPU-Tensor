@@ -1302,11 +1302,14 @@ cdef class Siever(object):
         
         if k >= dual_hash_dim:
             hash_start = self.l-k
-
+            list_of_norms = [
+                (norm ** 0.5) if norm != 0.0 else 1e-12
+                for norm in  self.M.r()
+            ]
             mu = zeros((k, k), dtype='float64')
             for i in xrange(hash_start,self.l):
                 for j in xrange(hash_start,i+1):
-                    mu[i-hash_start, j-hash_start] = self.M.get_r(i,j) / self.M.r()[j]**0.5
+                    mu[i-hash_start, j-hash_start] = self.M.get_r(i,j) / list_of_norms[j]
             muinv = inv(mu)
             
             E = Enumeration(self.M, nr_solutions=dual_hash_vecs_construct)

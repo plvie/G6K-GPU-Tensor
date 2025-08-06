@@ -57,7 +57,6 @@ def wrapped_sieve(pump):
 
         if (pump.g6k.M.get_r(pump.kappa, pump.kappa) <= pump.goal_r0):
             cont = False
-
     return cont
 
 def scoring_goal_r0(i, nlen, olen, aux):
@@ -98,7 +97,6 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
     :param increasing_insert_index: During pump-down, always insert on the right side of the previous insertion.
     :param prefer_left_insert: Parameter theta from the paper (Sec 4.4) for scoring insertion candidates.
     :param verbose: print pump steps on the standard output.
-
     """
     pump.r = kappa+blocksize
     pump.l = kappa+dim4free  # noqa
@@ -106,8 +104,7 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
     flast = blocksize
 
     g6k.shrink_db(0)
-    g6k.update_gso(kappa, pump.r)
-    g6k.initialize_local(kappa, max(pump.r-start_up_n, pump.l+1), pump.r)
+    g6k.initialize_local(kappa, max(pump.r-start_up_n, pump.l+1), pump.r) # update_gso in it
 
     pump.sat_factor = 1.
     pump.up_time_start = time.time()
@@ -153,10 +150,11 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
                     flast = g6k.l - kappa
                     if not wrapped_sieve(pump):
                         break
+                    
 
             #print g6k.db_lift_probability()
-
             if goal_r0 is not None and (g6k.M.get_r(kappa, kappa) <= goal_r0):
+                print("find in up")
                 print("norm of the solution : ", g6k.M.get_r(kappa, kappa))
                 print('Solution:', str(g6k.M.B[kappa]))
                 return flast
@@ -167,13 +165,14 @@ def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False, down_sat=Non
                 with tracer.context(("pump-step-down", "l:%d r:%d n:%d" % (g6k.l, g6k.r, g6k.n))):
                     with g6k.temp_params(saturation_ratio=pump.saturation_ratio_down):
                         # (try to) Insert
-                        ii = g6k.insert_best_lift(scoring_down, aux=pump, no_need_lll=(True if goal_r0 is not None else False))
+                        ii = g6k.insert_best_lift(scoring_down, aux=pump)
                         if ii is not None and increasing_insert_index:
                             pump.insert_left_bound = ii + 1
                         else:
                             g6k.shrink_left(1)
 
                         if goal_r0 is not None and (g6k.M.get_r(kappa, kappa) <= goal_r0):
+                            print("find in down")
                             print("norm of the solution : ", g6k.M.get_r(kappa, kappa))
                             print('Solution:', str(g6k.M.B[kappa]))
                             return flast
