@@ -452,10 +452,10 @@ __global__
 void kernel_babai( int16_t* A_x, float* A_yr, int16_t* x_extend, const float* mu, const int VECDIM, const uint32_t bucketsize) {
     constexpr int blocks = 128;
     constexpr int warps_per_block = 1;
-    
+    constexpr float EPS = 1e-6f;  // avoid 0 division
+
     float reg_yr[EL];
     float reg_mu[EL][EL];
-
     // load mu ones, don't care about efficiency
     for( int i = 0; i < EL; i++ ) {
         for( int j = i; j < EL; j++ ) {
@@ -478,7 +478,11 @@ void kernel_babai( int16_t* A_x, float* A_yr, int16_t* x_extend, const float* mu
 
         for(int i = EL-1; i >= 0; i-- ) {
             // babai rounding
-            int dx = -__float2int_rn( reg_yr[i] / reg_mu[i][i] );
+            float diag = reg_mu[i][i];
+            if (fabsf(diag) < EPS) {
+                diag = copysignf(EPS, diag);
+            }
+            int dx = -__float2int_rn(reg_yr[i] / diag);
             
             // update yr
             for(int j = i; j >= 0; j-- )
